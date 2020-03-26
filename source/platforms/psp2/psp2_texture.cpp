@@ -2,6 +2,8 @@
 // Created by cpasjuste on 01/12/16.
 //
 
+#ifndef __PSP2_GL__
+
 #include <cstring>
 #include <cstdio>
 
@@ -233,3 +235,5 @@ PSP2Texture::~PSP2Texture() {
         tex = nullptr;
     }
 }
+
+#endif // __PSP2_GL__

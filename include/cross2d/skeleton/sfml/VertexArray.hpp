@@ -186,7 +186,11 @@ namespace c2d {
         ////////////////////////////////////////////////////////////
         std::vector<Vertex> m_vertices;      ///< Vertices contained in the array
         PrimitiveType m_primitiveType; ///< Type of primitives to draw
+#ifdef __PSP2__
+        uint32_t vbo = 0;
+#else
         unsigned int vbo = 0;
+#endif
     };
 
 } // namespace c2d

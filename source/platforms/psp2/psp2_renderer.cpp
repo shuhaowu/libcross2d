@@ -2,6 +2,8 @@
 // Created by cpasjuste on 21/11/16.
 //
 
+#ifndef __PSP2_GL__
+
 #include <SDL2/SDL.h>
 #include <psp2/display.h>
 #include <psp2/kernel/threadmgr.h>
@@ -200,3 +202,5 @@ PSP2Renderer::~PSP2Renderer() {
     vita2d_wait_rendering_done();
     vita2d_fini();
 }
+
+#endif // __PSP2_GL__

@@ -46,15 +46,29 @@ extern c2d::Vector2f c2d_default_font_texture_size;
 #define printf sceClibPrintf
 #endif
 
+#ifdef __PSP2_GL__
+
+#include "vitaGL/source/vitaGL.h"
+#include "cross2d/platforms/psp2/psp2_gl_renderer.h"
+#include "cross2d/platforms/gl2/gl_shaders.h"
+#include "cross2d/platforms/gl2/gl_texture.h"
+#include "cross2d/platforms/gl2/gl_texture_buffer.h"
+#define C2DTexture GLTexture
+
+#else
+
 #include "platforms/psp2/psp2_renderer.h"
 #include "platforms/psp2/psp2_texture.h"
+#define C2DTexture PSP2Texture
+
+#endif
+
 #include "platforms/psp2/psp2_io.h"
 #include "platforms/psp2/psp2_clock.h"
 #include "platforms/sdl2/sdl2_input.h"
 #include "platforms/sdl2/sdl2_audio.h"
 
 #define C2DRenderer PSP2Renderer
-#define C2DTexture PSP2Texture
 #define C2DInput SDL2Input
 #define C2DAudio SDL2Audio
 #define C2DIo PSP2Io

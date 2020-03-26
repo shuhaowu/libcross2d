@@ -169,15 +169,21 @@ if (PLATFORM_VITA)
     set(PLATFORM_INCLUDES
             source/platforms/posix
             source/platforms/psp2
-            source/platforms/psp2/vita-shader-collection/includes
+            source/platforms/psp2/vitaGL/source
+            source/platforms/psp2/vitaGL/source/shaders
+            #source/platforms/psp2/vita-shader-collection/includes
             ${VITASDK}/arm-vita-eabi/include/freetype2
             )
     file(GLOB PLATFORM_SOURCES
             source/platforms/posix/posix_io.cpp
             source/platforms/psp2/*.c*
+            source/platforms/gl2/gl_texture.cpp
+            source/platforms/psp2/vitaGL/source/*.c
+            source/platforms/psp2/vitaGL/source/hacks/*.c
+            source/platforms/psp2/vitaGL/source/utils/*.c
             source/platforms/sdl2/sdl2_audio.cpp # TODO: get rid of sdl2, use sdl2 audio for now
             source/platforms/sdl2/sdl2_input.cpp # TODO: get rid of sdl2, use sdl2 input for now
-            source/platforms/psp2/vita-shader-collection/lib/*.o
+            #source/platforms/psp2/vita-shader-collection/lib/*.o
             )
     list(APPEND C2D_LDFLAGS
             SDL2 vita2d freetype
@@ -186,7 +192,7 @@ if (PLATFORM_VITA)
             SceAudio_stub SceTouch_stub SceHid_stub
             jpeg png z m c
             )
-    list(APPEND C2D_CFLAGS -D__PSP2__ -DNO_KEYBOARD
+    list(APPEND C2D_CFLAGS -D__PSP2__ -D__PSP2_GL__ -DNO_KEYBOARD
             -Wno-uninitialized -ftree-vectorize -mword-relocations
             -fomit-frame-pointer -ffast-math)
     if (BUILD_DEBUG)
