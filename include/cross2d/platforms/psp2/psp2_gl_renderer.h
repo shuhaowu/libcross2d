@@ -7,17 +7,17 @@
 #ifndef PSP2_GL_RENDERER_H
 #define PSP2_GL_RENDERER_H
 
+#include "cross2d/platforms/gl2/gl_renderer.h"
+
 namespace c2d {
 
-    class PSP2Renderer : public Renderer {
+    class PSP2Renderer : public GLRenderer {
 
     public:
 
         explicit PSP2Renderer(const Vector2f &size = Vector2f(0, 0));
 
         ~PSP2Renderer() override;
-
-        void draw(VertexArray *vertexArray, const Transform &transform, Texture *texture, Sprite *sprite) override;
 
         void flip(bool draw = true, bool inputs = true) override;
 

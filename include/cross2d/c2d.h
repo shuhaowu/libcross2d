@@ -53,6 +53,7 @@ extern c2d::Vector2f c2d_default_font_texture_size;
 #include "cross2d/platforms/gl2/gl_shaders.h"
 #include "cross2d/platforms/gl2/gl_texture.h"
 #include "cross2d/platforms/gl2/gl_texture_buffer.h"
+
 #define C2DTexture GLTexture
 
 #else

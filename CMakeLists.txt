@@ -44,6 +44,13 @@ if (PLATFORM_LINUX OR PLATFORM_WINDOWS OR PLATFORM_SWITCH)
     endif ()
 endif ()
 
+if (PLATFORM_VITA)
+    message(STATUS "C2D: SDL2 OpenGLES 2.0 support enabled")
+    set(OPTION_RENDER_GLES2 ON CACHE BOOL "OpenGLES 2.0 rendering" FORCE)
+    set(OPTION_SCREEN_WIDTH 960 CACHE STRING "" FORCE)
+    set(OPTION_SCREEN_HEIGHT 544 CACHE STRING "" FORCE)
+endif ()
+
 if (PLATFORM_RPI3)
     message(STATUS "C2D: SDL2 OpenGLES 2.0 support enabled")
     set(OPTION_SDL2 ON CACHE BOOL "SDL2 support" FORCE)
@@ -132,7 +139,7 @@ if (OPTION_RENDER_GL2 OR OPTION_RENDER_GLES2)
         list(APPEND C2D_CFLAGS -D__GLES2__)
         list(APPEND C2D_LDFLAGS GLESv2)
     endif ()
-    if (NOT PLATFORM_SWITCH)
+    if (NOT PLATFORM_SWITCH AND NOT PLATFORM_VITA)
         set(OpenGL_GL_PREFERENCE GLVND)
         find_package(OpenGL REQUIRED)
         list(APPEND C2D_INCLUDES ${OPENGL_INCLUDE_DIRS})
@@ -163,8 +170,6 @@ if (PLATFORM_VITA)
     #####################
     # VITA PLATORM
     #####################
-    set(OPTION_SCREEN_WIDTH 960 CACHE STRING "" FORCE)
-    set(OPTION_SCREEN_HEIGHT 544 CACHE STRING "" FORCE)
     set(TITLE_ID CROSS0001)
     set(PLATFORM_INCLUDES
             source/platforms/posix
@@ -177,7 +182,6 @@ if (PLATFORM_VITA)
     file(GLOB PLATFORM_SOURCES
             source/platforms/posix/posix_io.cpp
             source/platforms/psp2/*.c*
-            source/platforms/gl2/gl_texture.cpp
             source/platforms/psp2/vitaGL/source/*.c
             source/platforms/psp2/vitaGL/source/hacks/*.c
             source/platforms/psp2/vitaGL/source/utils/*.c

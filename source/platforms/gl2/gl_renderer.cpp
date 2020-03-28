@@ -74,7 +74,6 @@ void GLRenderer::draw(VertexArray *vertexArray, const Transform &transform, Text
     GL_CHECK(glEnableVertexAttribArray(0));
     GL_CHECK(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                                    (void *) offsetof(Vertex, position)));
-
     // set vertex colors
     GL_CHECK(glEnableVertexAttribArray(1));
     GL_CHECK(glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex),
@@ -111,10 +110,7 @@ void GLRenderer::draw(VertexArray *vertexArray, const Transform &transform, Text
     }
 
     // projection
-    int w, h;
-    SDL_Window *window = ((SDL2Renderer *) this)->getWindow();
-    SDL_GL_GetDrawableSize(window, &w, &h);
-    auto projectionMatrix = glm::orthoLH(0.0f, (float) w, (float) h, 0.0f, 0.0f, 1.0f);
+    auto projectionMatrix = glm::orthoLH(0.0f, getSize().x, getSize().y, 0.0f, 0.0f, 1.0f);
     // view
     auto viewMatrix = glm::make_mat4(transform.getMatrix());
     // mpv
