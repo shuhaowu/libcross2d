@@ -21,8 +21,13 @@ namespace c2d {
 
         void setShader(int shaderIndex) override;
 
+#ifdef __PSP2__
+        uint32_t texID = 0;
+        uint32_t fbo = 0;
+#else
         unsigned int texID = 0;
         unsigned int fbo = 0;
+#endif
     };
 }
 

@@ -32,7 +32,11 @@ namespace c2d {
 
         void setShader(int shaderIndex);
 
+#ifdef __PSP2__
+        uint32_t texID = 0;
+#else
         unsigned int texID = 0;
+#endif
 
         unsigned char *pixels = nullptr;
 

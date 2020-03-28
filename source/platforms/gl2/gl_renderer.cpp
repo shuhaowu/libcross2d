@@ -35,8 +35,10 @@ void GLRenderer::initGL() {
     GL_CHECK(glDisable(GL_DEPTH_TEST));
     GL_CHECK(glDepthMask(GL_FALSE));
 
+#if !defined (__PSP2__)
     // init shaders
     shaderList = (ShaderList *) new GLShaderList();
+#endif
 }
 
 void GLRenderer::draw(VertexArray *vertexArray, const Transform &transform, Texture *texture, Sprite *sprite) {
@@ -70,6 +72,13 @@ void GLRenderer::draw(VertexArray *vertexArray, const Transform &transform, Text
     // bind vbo
     vertexArray->bind();
 
+#if defined (__PSP2__)
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glVertexPointer(2, GL_FLOAT, sizeof(Vertex), (void *) offsetof(Vertex, position));
+
+    glEnableClientState(GL_COLOR_ARRAY);
+    glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(Vertex), (void *) offsetof(Vertex, color));
+#else
     // set vertex position
     GL_CHECK(glEnableVertexAttribArray(0));
     GL_CHECK(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
@@ -78,14 +87,20 @@ void GLRenderer::draw(VertexArray *vertexArray, const Transform &transform, Text
     GL_CHECK(glEnableVertexAttribArray(1));
     GL_CHECK(glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex),
                                    (void *) offsetof(Vertex, color)));
+#endif
 
     if (glTexture != nullptr && glTexture->available) {
         // bind texture
         GL_CHECK(glBindTexture(GL_TEXTURE_2D, glTexture->texID));
+#if defined (__PSP2__)
+        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+        glTexCoordPointer(2, GL_FLOAT, sizeof(Vertex), (void *) offsetof(Vertex, texCoords));
+#else
         // set tex coords
         GL_CHECK(glEnableVertexAttribArray(2));
         GL_CHECK(glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                                        (void *) offsetof(Vertex, texCoords)));
+#endif
         // set retroarch shader params
         if (sprite != nullptr) {
             inputSize = {sprite->getTextureRect().width, sprite->getTextureRect().height};
@@ -130,14 +145,23 @@ void GLRenderer::draw(VertexArray *vertexArray, const Transform &transform, Text
     GLenum mode = modes[vertexArray->getPrimitiveType()];
     GL_CHECK(glDrawArrays(mode, 0, (GLsizei) vertexCount));
 
+#if defined (__PSP2__)
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_COLOR_ARRAY);
+#else
     GL_CHECK(glDisableVertexAttribArray(0));
     GL_CHECK(glDisableVertexAttribArray(1));
+#endif
 
     if (glTexture != nullptr || vertices[0].color.a < 255) {
         GL_CHECK(glDisable(GL_BLEND));
         if (glTexture != nullptr && glTexture->available) {
             GL_CHECK(glBindTexture(GL_TEXTURE_2D, 0));
+#if defined (__PSP2__)
+            glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+#else
             GL_CHECK(glDisableVertexAttribArray(2));
+#endif
         }
     }
 

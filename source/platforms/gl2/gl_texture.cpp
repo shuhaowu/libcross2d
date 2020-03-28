@@ -290,7 +290,11 @@ GLTexture::~GLTexture() {
         pixels = nullptr;
     }
 
+#ifdef __PSP2__
+    if (texID > 0) {
+#else
     if (glIsTexture(texID) == GL_TRUE) {
+#endif
         //printf("glDeleteTextures(%i)\n", texID);
         glDeleteTextures(1, &texID);
         texID = 0;

@@ -48,6 +48,8 @@ extern c2d::Vector2f c2d_default_font_texture_size;
 
 #ifdef __PSP2_GL__
 
+#define GL_RGBA8 GL_RGBA
+#define GL_RGB565 GL_RGB
 #include "vitaGL/source/vitaGL.h"
 #include "cross2d/platforms/psp2/psp2_gl_renderer.h"
 #include "cross2d/platforms/gl2/gl_shaders.h"

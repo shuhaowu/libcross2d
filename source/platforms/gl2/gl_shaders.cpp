@@ -2,7 +2,7 @@
 // Created by cpasjuste on 27/01/17.
 //
 
-#ifdef __GL2__
+#if defined(__GL2__) && !defined(__PSP2__)
 
 #include "cross2d/c2d.h"
 #include "shaders/shaders.h"
