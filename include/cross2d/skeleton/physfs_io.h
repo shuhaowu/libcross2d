@@ -2,16 +2,20 @@
 // Created by cpasjuste on 17/11/17.
 //
 
-#ifndef C2D_POSIX_IO_H
-#define C2D_POSIX_IO_H
+#ifndef C2D_PHYSFS_IO_H
+#define C2D_PHYSFS_IO_H
 
 #include "cross2d/skeleton/io.h"
 
 namespace c2d {
 
-    class POSIXIo : public Io {
+    class PHYSFSIo : public Io {
 
     public:
+
+        PHYSFSIo();
+
+        ~PHYSFSIo() override;
 
         File getFile(const std::string &path) override;
 
@@ -41,6 +45,8 @@ namespace c2d {
 
         std::string getDataPath() override;
 
+        std::string getRomFsPath() override;
+
     private:
 
         bool _copy(const std::string &src, const std::string &dst,
@@ -51,4 +57,4 @@ namespace c2d {
     };
 }
 
-#endif //C2D_POSIX_IO_H
+#endif //C2D_PHYSFS_IO_H

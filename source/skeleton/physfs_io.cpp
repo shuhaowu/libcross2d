@@ -4,90 +4,109 @@
 
 #include <unistd.h>
 #include <cstring>
-#include <dirent.h>
-#include <sys/stat.h>
 
-#include "cross2d/c2d.h"
-
-#ifdef __WINDOWS__
-#define mkdir(x, y) mkdir(x)
-#elif __PSP2__
-#include <psp2/io/stat.h>
-#define rmdir(x) sceIoRmdir(x)
-#endif
+#include "physfs.h"
+#include "cross2d/skeleton/physfs_io.h"
 
 using namespace c2d;
 
-std::string POSIXIo::getDataPath() {
-#if defined(__PSP2__)
-    return getDataPath();
-#else
+PHYSFSIo::PHYSFSIo() : Io() {
+    const std::string cwd = PHYSFSIo::getDataPath();
+    PHYSFS_init(cwd.c_str());
+    PHYSFS_mount("myzip.zip", "/romfs", 1);
+    PHYSFS_mount("/", "/", 1);
+}
+
+PHYSFSIo::~PHYSFSIo() {
+    PHYSFS_deinit();
+}
+
+std::string PHYSFSIo::getDataPath() {
+
     char buf[1024];
     if (getcwd(buf, sizeof(buf)) != nullptr) {
         std::string str = buf;
         if (!Utility::endsWith(str, "/")) {
             str += "/";
         }
-#ifdef __SWITCH__
-        // some library does not like "sdmc:"
-        if (str.compare(0, 5, "sdmc:") == 0) {
-            str.erase(0, 5);
-        }
-#endif
         return str;
     }
 
     return Io::getDataPath();
-#endif
 }
 
-Io::File POSIXIo::getFile(const std::string &path) {
+std::string PHYSFSIo::getRomFsPath() {
+    return "/romfs/";
+}
+
+Io::File PHYSFSIo::getFile(const std::string &path) {
 
     File file{};
-    struct stat st{};
+    PHYSFS_Stat st{};
 
-    if (stat(path.c_str(), &st) != 0) {
+    if (PHYSFS_stat(path.c_str(), &st) == 0) {
         return file;
     }
 
     file.name = Utility::baseName(path);
     file.path = path;
-    file.size = (size_t) st.st_size;
-    file.type = S_ISDIR(st.st_mode) ? Type::Directory : Type::File;
+    file.size = (size_t) st.filesize;
+    file.type = st.filetype == PHYSFS_FILETYPE_DIRECTORY ? Type::Directory : Type::File;
 
     return file;
 }
 
-bool POSIXIo::exist(const std::string &path) {
-    if (path.empty()) {
-        return false;
+size_t PHYSFSIo::getSize(const std::string &path) {
+
+    PHYSFS_Stat st{};
+
+    if (PHYSFS_stat(path.c_str(), &st) == 0) {
+        return 0;
     }
-    struct stat st{};
-    return (stat(path.c_str(), &st) == 0);
+
+    return (size_t) st.filesize;
 }
 
-bool POSIXIo::create(const std::string &path) {
-#ifdef __PSP2__
-    return sceIoMkdir(path.c_str(), 0777) == 0;
-#else
-    return mkdir(path.c_str(), 0755) == 0;
-#endif
+Io::Type PHYSFSIo::getType(const std::string &path) {
+
+    PHYSFS_Stat st{};
+
+    if (PHYSFS_stat(path.c_str(), &st) == 0) {
+        return Type::Unknown;
+    }
+
+    return st.filetype == PHYSFS_FILETYPE_DIRECTORY ? Type::Directory : Type::File;
 }
 
-bool POSIXIo::removeFile(const std::string &path) {
-    return unlink(path.c_str()) == 0;
+bool PHYSFSIo::exist(const std::string &path) {
+    return PHYSFS_exists(path.c_str()) != 0;
 }
 
-bool POSIXIo::removeDir(const std::string &path) {
+bool PHYSFSIo::create(const std::string &path) {
+    return PHYSFS_mkdir(path.c_str()) != 0;
+}
 
-    struct dirent *ent;
-    DIR *dir;
+bool PHYSFSIo::removeFile(const std::string &path) {
+    return PHYSFS_delete(path.c_str()) != 0;
+}
 
+bool PHYSFSIo::removeDir(const std::string &path) {
+
+    //struct dirent *ent;
+    //DIR *dir;
+    char **fileList;
     File file = getFile(path);
     if (file.type != Type::Directory) {
         return false;
     }
 
+    fileList = PHYSFS_enumerateFiles(path.c_str());
+    for (char **i = fileList; *i != nullptr; i++) {
+
+        printf(" * We've got [%s].\n", *i);
+    }
+
+    /*
     if ((dir = opendir(file.path.c_str())) != nullptr) {
         while ((ent = readdir(dir)) != nullptr) {
 
@@ -113,85 +132,72 @@ bool POSIXIo::removeDir(const std::string &path) {
     } else {
         return false;
     }
+    */
 
     return rmdir(path.c_str()) == 0;
 }
 
-size_t POSIXIo::getSize(const std::string &file) {
-    struct stat st{};
-    if (stat(file.c_str(), &st) != 0) {
-        return 0;
-    }
-    return (size_t) st.st_size;
-}
+char *PHYSFSIo::read(const std::string &file, size_t offset, size_t size) {
 
-Io::Type POSIXIo::getType(const std::string &file) {
-    struct stat st{};
-    if (stat(file.c_str(), &st) != 0) {
-        return Type::Unknown;
-    }
-    return S_ISDIR(st.st_mode) ? Type::Directory : Type::File;
-}
+    PHYSFS_File *fp;
+    PHYSFS_sint64 file_size;
+    char *buffer;
 
-char *POSIXIo::read(const std::string &file, size_t offset, size_t size) {
-
-    FILE *fp = nullptr;
-    size_t file_size;
-    char *buffer = nullptr;
-
-    fp = fopen(file.c_str(), "rb");
+    fp = PHYSFS_openRead(file.c_str());
     if (fp == nullptr) {
-        printf("POSIXIo::read: can't open %s\n", file.c_str());
+        printf("PHYSFSIo::read: can't open %s\n", file.c_str());
         return nullptr;
     }
 
-    fseek(fp, 0L, SEEK_END);
-    file_size = ftell(fp);
-    fseek(fp, 0L, SEEK_SET);
-
+    file_size = PHYSFS_fileLength(fp);
     if (size <= 0) {
         size = file_size;
     }
 
-    if (offset + size > file_size) {
+    if (offset + size > (PHYSFS_uint64) file_size) {
         size = file_size - offset;
     }
 
     if (offset > 0) {
-        fseek(fp, offset, SEEK_SET);
+        PHYSFS_seek(fp, offset);
     }
 
     buffer = (char *) malloc(size);
-
-    if (fread(buffer, 1, size, fp) != size) {
-        fclose(fp);
+    if (PHYSFS_readBytes(fp, buffer, size) != (PHYSFS_sint64) size) {
+        PHYSFS_close(fp);
         free(buffer);
-        printf("POSIXIo::read: can't read %s\n", file.c_str());
+        printf("PHYSFSIo::read: can't read %s\n", file.c_str());
         return nullptr;
     }
 
-    fclose(fp);
+    PHYSFS_close(fp);
 
     return buffer;
 }
 
-bool POSIXIo::write(const std::string &file, const char *data, size_t size) {
+bool PHYSFSIo::write(const std::string &file, const char *data, size_t size) {
 
-    FILE *fp;
-
-    fp = fopen(file.c_str(), "w");
+    PHYSFS_File *fp = PHYSFS_openWrite(file.c_str());
     if (fp == nullptr) {
         return false;
     }
 
-    fwrite(data, 1, size, fp);
-    fclose(fp);
+    PHYSFS_sint64 len = PHYSFS_writeBytes(fp, data, size);
+    PHYSFS_close(fp);
 
-    return true;
+    return len == (PHYSFS_sint64) size;
 }
 
-std::vector<Io::File> POSIXIo::getDirList(const std::string &path, bool sort, bool showHidden) {
+std::vector<Io::File> PHYSFSIo::getDirList(const std::string &path, bool sort, bool showHidden) {
 
+    std::vector<Io::File> files;
+    char **fileList = PHYSFS_enumerateFiles(path.c_str());
+    for (char **i = fileList; *i != nullptr; i++) {
+        printf("[%s]\n", *i);
+    }
+
+    return files;
+#if 0
     std::vector<Io::File> files;
     struct dirent *ent;
     DIR *dir;
@@ -239,11 +245,13 @@ std::vector<Io::File> POSIXIo::getDirList(const std::string &path, bool sort, bo
     }
 
     return files;
+#endif
 }
 
-Io::File POSIXIo::findFile(const std::string &path,
-                           const std::vector<std::string> &whitelist, const std::string &blacklist) {
-
+Io::File PHYSFSIo::findFile(const std::string &path,
+                            const std::vector<std::string> &whitelist, const std::string &blacklist) {
+    return File{};
+#if 0
     struct dirent *ent;
     DIR *dir;
     File file{};
@@ -283,10 +291,11 @@ Io::File POSIXIo::findFile(const std::string &path,
     }
 
     return file;
+#endif
 }
 
-bool POSIXIo::copy(const std::string &src, const std::string &dst,
-                   const std::function<void(File, File, float)> &callback) {
+bool PHYSFSIo::copy(const std::string &src, const std::string &dst,
+                    const std::function<void(File, File, float)> &callback) {
 
     bool res = _copy(src, dst, callback);
 
@@ -297,9 +306,9 @@ bool POSIXIo::copy(const std::string &src, const std::string &dst,
     return res;
 }
 
-bool POSIXIo::_copy(const std::string &src, const std::string &dst,
-                    const std::function<void(File, File, float)> &callback) {
-
+bool PHYSFSIo::_copy(const std::string &src, const std::string &dst,
+                     const std::function<void(File, File, float)> &callback) {
+#if 0
     File srcFile;
     File dstFile;
     struct dirent *ent;
@@ -383,13 +392,14 @@ bool POSIXIo::_copy(const std::string &src, const std::string &dst,
     } else {
         return false;
     }
-
+#endif
     return true;
 }
 
-bool POSIXIo::_copyFile(const File &src, const File &dst,
-                        const std::function<void(File, File, float)> &callback) {
+bool PHYSFSIo::_copyFile(const File &src, const File &dst,
+                         const std::function<void(File, File, float)> &callback) {
 
+#if 0
     if (src.path == dst.path) {
         if (callback != nullptr) {
             callback(src, dst, -1);
@@ -461,6 +471,7 @@ bool POSIXIo::_copyFile(const File &src, const File &dst,
     free(buf);
     fclose(srcFd);
     fclose(dstFd);
+#endif
 
     return true;
 }

@@ -3,6 +3,7 @@
 //
 
 #include "cross2d/c2d.h"
+#include "cross2d/skeleton/physfs_io.h"
 
 using namespace c2d;
 
@@ -12,6 +13,13 @@ int main(int argc, char *argv[]) {
     auto *renderer = new C2DRenderer(Vector2f(C2D_SCREEN_WIDTH, C2D_SCREEN_HEIGHT));
     renderer->setClearColor(Color::Black);
 
+    auto io = new PHYSFSIo();
+    std::string home = io->getDataPath();
+    printf("home: %s\n", home.c_str());
+    io->getDirList("/romfs", false, false);
+    delete(io);
+
+#if 0
     auto *border = new C2DRectangle({2, 2,
                                      renderer->getSize().x - 4, renderer->getSize().y - 4});
     border->setFillColor(Color::Transparent);
@@ -93,7 +101,7 @@ int main(int argc, char *argv[]) {
         // renderer everything
         renderer->flip();
     }
-
+#endif
     // will delete child's (textures, shapes, text..)
     delete (renderer);
 

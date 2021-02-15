@@ -22,6 +22,7 @@ option(OPTION_LOADER_GLAD "Glad OpenGL loader" ON)
 option(OPTION_LOADER_GLEW "Glew OpenGL loader" OFF)
 option(OPTION_RENDER_GLES2 "OpenGLES 2.0 rendering" OFF)
 option(OPTION_RENDER_GLES2 "OpenGLES 2.0 rendering" OFF)
+option(OPTION_BUILTIN_ROMFS "Build with romfs support" OFF)
 option(OPTION_BUILTIN_LIBCONFIG "Build libconfig from sources" OFF)
 set(OPTION_SCREEN_WIDTH 1280 CACHE STRING "Custom screen width")
 set(OPTION_SCREEN_HEIGHT 720 CACHE STRING "Custom screen height")
@@ -29,6 +30,7 @@ set(OPTION_SCREEN_HEIGHT 720 CACHE STRING "Custom screen height")
 ####################
 # SANITY CHECKS
 ####################
+
 if (PLATFORM_LINUX OR PLATFORM_WINDOWS OR PLATFORM_SWITCH)
     if (NOT (OPTION_SDL1 OR OPTION_RENDER_GL1 OR OPTION_RENDER_GLES2))
         message(STATUS "C2D: SDL2 OpenGL 3.3 support enabled")
@@ -76,6 +78,17 @@ if (OPTION_BUILTIN_LIBCONFIG)
     file(GLOB LIBCONFIG_SOURCES source/skeleton/libconfig/*.c)
 else ()
     list(APPEND C2D_LDFLAGS -lconfig)
+endif ()
+
+if (PLATFORM_LINUX OR PLATFORM_WINDOWS)
+    set(OPTION_BUILTIN_ROMFS ON CACHE BOOL "" FORCE)
+endif ()
+
+if (OPTION_BUILTIN_ROMFS)
+    pkg_search_module(PHYSFS REQUIRED physfs)
+    list(APPEND C2D_INCLUDES ${PHYSFS_INCLUDE_DIRS})
+    list(APPEND C2D_LDFLAGS ${PHYSFS_LIBRARIES})
+    list(APPEND C2D_CFLAGS -D__PHYSFS__)
 endif ()
 
 if (OPTION_SDL1)
