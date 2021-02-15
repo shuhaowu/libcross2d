@@ -191,61 +191,44 @@ bool PHYSFSIo::write(const std::string &file, const char *data, size_t size) {
 std::vector<Io::File> PHYSFSIo::getDirList(const std::string &path, bool sort, bool showHidden) {
 
     std::vector<Io::File> files;
+    PHYSFS_Stat st{};
     char **fileList = PHYSFS_enumerateFiles(path.c_str());
+
     for (char **i = fileList; *i != nullptr; i++) {
-        printf("[%s]\n", *i);
-    }
 
-    return files;
-#if 0
-    std::vector<Io::File> files;
-    struct dirent *ent;
-    DIR *dir;
+        const char *name = *i;
 
-    if (!path.empty()) {
-        if ((dir = opendir(path.c_str())) != nullptr) {
-            while ((ent = readdir(dir)) != nullptr) {
+        // skip "."
+        if ((path == "/" || strlen(name) == 1) && name[0] == '.') {
+            continue;
+        }
 
-                //printf("getDirList: %s\n", ent->d_name);
-
-                // skip "."
-                if ((path == "/" || strlen(ent->d_name) == 1) && ent->d_name[0] == '.') {
-                    continue;
-                }
-                // skip "hidden" files
-                if (!showHidden && ent->d_name[0] == '.') {
-                    if (strlen(ent->d_name) != 2 && ent->d_name[1] != '.') {
-                        continue;
-                    }
-                }
-
-                File file;
-                file.name = ent->d_name;
-                file.path = Utility::removeLastSlash(path) + "/" + file.name;
-#if 0
-                auto *dirSt = (fsdev_dir_t *) dir->dirData->dirStruct;
-                FsDirectoryEntry *entry = &dirSt->entry_data[dirSt->index];
-                file.type = entry->type == ENTRYTYPE_DIR ? Type::Directory : Type::File;
-                file.size = entry->fileSize;
-#else
-                struct stat st{};
-                if (stat(file.path.c_str(), &st) == 0) {
-                    file.size = (size_t) st.st_size;
-                    file.type = S_ISDIR(st.st_mode) ? Type::Directory : Type::File;
-                }
-#endif
-                file.color = file.type == Type::Directory ? Color::Yellow : Color::White;
-                files.push_back(file);
-            }
-            closedir(dir);
-            if (sort) {
-                std::sort(files.begin(), files.end(), compare);
+        // skip "hidden" files
+        if (!showHidden && name[0] == '.') {
+            if (strlen(name) != 2 && name[1] != '.') {
+                continue;
             }
         }
+
+        File file;
+        file.name = name;
+        file.path = Utility::removeLastSlash(path) + "/" + file.name;
+        if (PHYSFS_stat(file.path.c_str(), &st) != 0) {
+            file.size = (size_t) st.filesize;
+            file.type = st.filetype == PHYSFS_FILETYPE_DIRECTORY ? Type::Directory : Type::File;
+        }
+
+        file.color = file.type == Type::Directory ? Color::Yellow : Color::White;
+        files.push_back(file);
+    }
+
+    PHYSFS_freeList(fileList);
+
+    if (sort) {
+        std::sort(files.begin(), files.end(), compare);
     }
 
     return files;
-#endif
 }
 
 Io::File PHYSFSIo::findFile(const std::string &path,

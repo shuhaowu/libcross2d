@@ -16,8 +16,13 @@ int main(int argc, char *argv[]) {
     auto io = new PHYSFSIo();
     std::string home = io->getDataPath();
     printf("home: %s\n", home.c_str());
-    io->getDirList("/romfs", false, false);
-    delete(io);
+    std::vector<Io::File> files = io->getDirList("/romfs/data_romfs", false, false);
+    for (auto &file : files) {
+        printf("%s: %s (%lu)\n",
+               file.type == Io::Type::File ? "F" : "D", file.path.c_str(), file.size);
+    }
+
+    delete (io);
 
 #if 0
     auto *border = new C2DRectangle({2, 2,
